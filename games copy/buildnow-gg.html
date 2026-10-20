@@ -1,0 +1,244 @@
+<!-- Ultimate Game Stash file-->
+<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <!-- GitHub Raw sends Unity JavaScript as text/plain with nosniff, which
+         browsers refuse to execute. This pinned CDN copy serves the identical
+         build with the proper JavaScript MIME type. -->
+    <base
+      href="https://cdn.jsdelivr.net/gh/bubblfan/cg-rip@151f9126d2ccb6b81dc0f93155e305900d423d5c/buildnow-gg/"
+    />
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+  </head>
+  <body style="margin: 0; padding: 0; background: #05070d" class="noselect">
+    <div
+      id="loading-text"
+      style="
+        color: #a5f3fc;
+        font-size: 18px;
+        font-family: system-ui, sans-serif;
+        font-weight: 700;
+        text-align: center;
+        position: fixed;
+        z-index: 5;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(90vw, 620px);
+        margin: 0;
+        padding: 18px 22px;
+        border: 1px solid rgba(34, 211, 238, 0.48);
+        border-radius: 12px;
+        background: rgba(9, 13, 22, 0.94);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
+      "
+    >
+      Preparing BuildNow GG… First launch downloads the game engine.
+    </div>
+    <canvas
+      id="unity-canvas"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        outline: none;
+        z-index: 1;
+      "
+    ></canvas>
+
+    <script>
+      const SPLIT_MAP = {
+        "7db022abd161455e3cc5f207e75d294b.wasm": null,
+        "ab8dd356a41a2943639294657a0990f8.data": null,
+      };
+    </script>
+
+    <script>
+      async function mergeParts(baseUrl) {
+        const parts = [];
+        for (let i = 1; i <= 99; i++) {
+          const testUrl = baseUrl + ".part" + i;
+          try {
+            const head = await fetch(testUrl, { method: "HEAD" });
+            if (!head.ok) break;
+            parts.push(testUrl);
+          } catch {
+            break;
+          }
+        }
+        if (parts.length === 0) return baseUrl;
+
+        const buffers = await Promise.all(
+          parts.map(async (u) => {
+            const r = await fetch(u);
+            if (!r.ok) throw new Error("Failed part " + u);
+            return new Uint8Array(await r.arrayBuffer());
+          }),
+        );
+
+        const total = buffers.reduce((a, b) => a + b.length, 0);
+        const merged = new Uint8Array(total);
+        let offset = 0;
+        for (const b of buffers) {
+          merged.set(b, offset);
+          offset += b.length;
+        }
+
+        return URL.createObjectURL(
+          new Blob([merged], {
+            // Unity uses streaming compilation for its code file. Giving the
+            // merged blob the right MIME type avoids a failed first attempt
+            // before the browser falls back to a slower ArrayBuffer path.
+            type: baseUrl.endsWith(".wasm")
+              ? "application/wasm"
+              : "application/octet-stream",
+          }),
+        );
+      }
+
+      function getResourceUrl(resource) {
+        if (typeof resource === "string") return resource;
+        if (resource instanceof URL) return resource.href;
+        if (resource && typeof resource.url === "string") return resource.url;
+        return "";
+      }
+
+      function getResourceKey(resource) {
+        const url = getResourceUrl(resource);
+        try {
+          return new URL(url, document.baseURI).pathname.split("/").pop() || "";
+        } catch {
+          return url.split(/[?#]/)[0].split("/").pop() || "";
+        }
+      }
+
+      function getStreamingAssetUrl(resource) {
+        const url = getResourceUrl(resource);
+        const marker = "StreamingAssets/";
+        const start = url.indexOf(marker);
+        return start === -1
+          ? null
+          : new URL(url.slice(start), document.baseURI).href;
+      }
+
+      function showFailure() {
+        const loadingText = document.getElementById("loading-text");
+        if (!loadingText) return;
+        loadingText.style.display = "block";
+        loadingText.innerHTML =
+          'BuildNow GG could not start. Check your connection, then <button type="button" onclick="location.reload()" style="margin-left:8px;padding:7px 11px;border:1px solid #67e8f9;border-radius:7px;background:#0e7490;color:white;font-weight:700;cursor:pointer">Try again</button>';
+      }
+
+      async function preMergeAll() {
+        const map = {};
+        const files = Object.entries(SPLIT_MAP);
+        const total = files.length;
+        let done = 0;
+
+        const loadingText = document.getElementById("loading-text");
+
+        for (const [file, _] of files) {
+          const merged = await mergeParts("Build/" + file);
+          map[file] = merged;
+          done++;
+          const percent = Math.floor((done / total) * 100);
+          loadingText.innerText = `Preparing BuildNow GG… ${percent}%`;
+          console.log("Premerged:", file, "→", merged);
+        }
+
+        loadingText.style.display = "none";
+
+        return map;
+      }
+
+      (async () => {
+        try {
+          const mergedMap = await preMergeAll();
+          window.SPLIT_MAP = mergedMap;
+          const origFetch = window.fetch;
+          window.fetch = async function (resource, options) {
+            const key = getResourceKey(resource);
+            const requestOptions = resource instanceof Request ? resource : options;
+            if (mergedMap[key]) {
+              console.log("Redirect fetch:", key);
+              return origFetch(mergedMap[key], requestOptions);
+            }
+
+            const streamingAssetUrl = getStreamingAssetUrl(resource);
+            if (streamingAssetUrl) {
+              return origFetch(streamingAssetUrl, requestOptions);
+            }
+
+            return origFetch(resource, options);
+          };
+
+          const OrigXHR = window.XMLHttpRequest;
+          window.XMLHttpRequest = function () {
+            const xhr = new OrigXHR();
+            const origOpen = xhr.open;
+            xhr.open = function (method, url, ...rest) {
+              const key = getResourceKey(url);
+              const streamingAssetUrl = getStreamingAssetUrl(url);
+              const redirectedUrl = mergedMap[key] || streamingAssetUrl;
+              if (redirectedUrl) {
+                console.log("Redirect XHR:", key);
+                origOpen.call(xhr, method, redirectedUrl, ...rest);
+              } else {
+                origOpen.call(xhr, method, url, ...rest);
+              }
+            };
+            return xhr;
+          };
+
+          const canvas = document.querySelector("#unity-canvas");
+          const loaderUrl = "Build/7a2dbded24d57e056180125b1583e7c4.loader.js";
+          const config = {
+            dataUrl: "Build/ab8dd356a41a2943639294657a0990f8.data",
+            frameworkUrl: "Build/91a2bfcec140bc524100478b99a4f6d7.framework.js",
+            codeUrl: "Build/7db022abd161455e3cc5f207e75d294b.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "BuildNow GG",
+            productName: "BuildNow GG",
+            productVersion: "1.0.0",
+          };
+
+          const script = document.createElement("script");
+          script.src = loaderUrl;
+          script.onerror = showFailure;
+          script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {})
+              .then((unityInstance) => {
+                window.gameInstance = unityInstance;
+              })
+              .catch(showFailure);
+          };
+          document.body.appendChild(script);
+        } catch (error) {
+          console.error("BuildNow GG failed to prepare", error);
+          showFailure();
+        }
+      })();
+    </script>
+
+    <script>
+      function resizeCanvas() {
+        const canvas = document.getElementById("unity-canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
+      }
+      window.addEventListener("load", resizeCanvas);
+      window.addEventListener("resize", resizeCanvas);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          if (typeof window === "undefined") return;
+          window.addEventListener(
+            "error",
+            function (e) {
+              if (e && e.message && typeof e.message === "string" && e.message.indexOf("Cannot set property fetch") !== -1) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+              }
+            },
+            true
+          );
+          var activeFetch = window.fetch;
+          var ownDesc = Object.getOwnPropertyDescriptor(window, "fetch");
+          if (!ownDesc || (!ownDesc.set && !ownDesc.writable)) {
+            try {
+              Object.defineProperty(window, "fetch", {
+                get: function () {
+                  return activeFetch;
+                },
+                set: function (f) {
+                  activeFetch = f;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (_err) {
+              try {
+                var protoDesc = Object.getOwnPropertyDescriptor(Window.prototype, "fetch");
+                if (!protoDesc || !protoDesc.set) {
+                  Object.defineProperty(Window.prototype, "fetch", {
+                    get: function () {
+                      return activeFetch;
+                    },
+                    set: function (f) {
+                      activeFetch = f;
+                    },
+                    configurable: true,
+                    enumerable: true
+                  });
+                }
+              } catch (_err2) {}
+            }
+          }
+        } catch (_outerErr) {}
+      })();
+      // Anti-Inspect Element & DevTools Lock
+      (function () {
+        try {
+          if (typeof window === "undefined") return;
+          // Disable right-click context menu immediately
+          window.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+          }, true);
+          // Disable DevTools & source inspection shortcuts
+          window.addEventListener("keydown", function(e) {
+            if (e.key === "F12" || e.keyCode === 123) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              return false;
+            }
+            var isCtrlOrCmd = e.ctrlKey || e.metaKey;
+            if (isCtrlOrCmd && e.shiftKey) {
+              var k = (e.key || "").toUpperCase();
+              if (k === "I" || k === "J" || k === "C" || k === "K" || k === "E") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+              }
+            }
+            if (e.metaKey && e.altKey) {
+              var k2 = (e.key || "").toUpperCase();
+              if (k2 === "I" || k2 === "J" || k2 === "C" || k2 === "U") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+              }
+            }
+            if (isCtrlOrCmd) {
+              var k3 = (e.key || "").toUpperCase();
+              if (k3 === "U" || k3 === "S") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+              }
+            }
+          }, true);
+        } catch (_e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./clever-favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="./clever-logo.svg" />
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" href="./clever-favicon.png" />
+    <title>Eaglecraft Web</title>
+    <meta
+      name="description"
+      content="Play Eaglecraft in your browser with active multiplayer server URLs, working fullscreen mode, and instant server connect, plus Geometry Dash, Super Mario 64, 2D Paper Minecraft, 2D Platformer, Slope 2, and classic web games."
+    />
+    <meta property="og:title" content="Eaglecraft Web" />
+    <meta
+      property="og:description"
+      content="Play Eaglecraft in your browser with active multiplayer server URLs, working fullscreen mode, and instant server connect, plus Geometry Dash, Super Mario 64, 2D Paper Minecraft, 2D Platformer, Slope 2, and classic web games."
+    />
+    <script type="module" crossorigin src="./assets/index-Bv49dh5f.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Drdu1Mww.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

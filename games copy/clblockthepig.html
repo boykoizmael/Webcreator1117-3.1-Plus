@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Block the Pig</title>
+    <!-- Keep the original game assets remote so the website download stays lightweight. -->
+    <base href="https://cdn.jsdelivr.net/gh/BrowLu27/gamessite.github.io@main/projects/block-the-pig/" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; }
+      #c2canvasdiv, #c2canvas { width: 100% !important; height: 100% !important; }
+      #c2canvas { display: block; margin: auto; object-fit: contain; }
+    </style>
+  </head>
+  <body>
+    <div id="c2canvasdiv">
+      <canvas id="c2canvas" width="320" height="480">Your browser does not support HTML5 canvas.</canvas>
+    </div>
+    <script src="jquery-3.4.1.min.js"></script>
+    <script src="c2runtime.js"></script>
+    <script>
+      window.C2_RegisterSW = function () {};
+      jQuery(function () { cr_createRuntime("c2canvas"); });
+      function setSuspended() {
+        if (typeof cr_setSuspended === "function") cr_setSuspended(document.hidden);
+      }
+      document.addEventListener("visibilitychange", setSuspended);
+    </script>
+  </body>
+</html>

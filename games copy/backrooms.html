@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>The Backrooms - WebGL</title>
+  <!-- Ultimate Game Stash / Unity WebGL -->
+  <style type="text/css">
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0d0f12;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+    #button {
+      display: none;
+    }
+    .imgb_vis {
+      animation: imgb-animation 7s linear;
+    }
+    @keyframes imgb-animation {
+      10% { transform: translateX(0); }
+      20% { transform: translateX(100px); }
+      90% { transform: translateX(100px); }
+      100% { transform: translateX(0); }
+    }
+    .webgl-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+    #gameContainer {
+      width: 100vw;
+      height: 100vh;
+      padding: 0px;
+      margin: 0px;
+      border: 0px;
+      position: relative;
+      background: url("https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/Build/WebGL.jpg") center center / cover no-repeat;
+    }
+    #canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+    #loadingOverlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, rgba(30, 24, 10, 0.92) 0%, rgba(10, 8, 4, 0.98) 100%);
+      z-index: 10;
+      transition: opacity 0.6s ease;
+      pointer-events: none;
+    }
+    #loadingOverlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .loader-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: #fbbf24;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+      margin-bottom: 8px;
+    }
+    .loader-sub {
+      font-size: 13px;
+      color: #a3a3a3;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+    .progress-bar-container {
+      width: 280px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      position: relative;
+    }
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #d97706, #fbbf24);
+      box-shadow: 0 0 12px #fbbf24;
+      transition: width 0.2s ease;
+    }
+    .progress-text {
+      margin-top: 10px;
+      font-size: 12px;
+      font-family: monospace;
+      color: #fbbf24;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/TemplateData/UnityProgress.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/Build/UnityLoader.js"></script>
+  <script>
+    var gameInstance;
+    function customProgress(unityInstance, progress) {
+      var overlay = document.getElementById("loadingOverlay");
+      var fill = document.getElementById("progressFill");
+      var text = document.getElementById("progressText");
+      if (fill && text) {
+        var pct = Math.round(progress * 100);
+        fill.style.width = pct + "%";
+        text.innerText = "ENTERING LEVEL 0... " + pct + "%";
+      }
+      if (progress === 1) {
+        setTimeout(function() {
+          if (overlay) overlay.classList.add("hidden");
+        }, 1200);
+      }
+      if (typeof UnityProgress === "function") {
+        try { UnityProgress(unityInstance, progress); } catch(e) {}
+      }
+    }
+
+    function initGame() {
+      try {
+        gameInstance = UnityLoader.instantiate(
+          "gameContainer",
+          "https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/Build/WebGL.json",
+          { onProgress: customProgress }
+        );
+      } catch (err) {
+        console.error("UnityLoader instantiation error:", err);
+        var text = document.getElementById("progressText");
+        if (text) text.innerText = "Error loading Unity WebGL: " + err.message;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", initGame);
+  </script>
+</head>
+<body dir="ltr">
+  <div class="webgl-content">
+    <div id="loadingOverlay">
+      <div class="loader-title">The Backrooms</div>
+      <div class="loader-sub">LEVEL 0 &bull; MONO-YELLOW EXPEDITION</div>
+      <div class="progress-bar-container">
+        <div id="progressFill" class="progress-bar-fill"></div>
+      </div>
+      <div id="progressText" class="progress-text">INITIALIZING ENGINE...</div>
+    </div>
+    <div id="gameContainer">
+      <canvas id="canvas"></canvas>
+    </div>
+  </div>
+</body>
+</html>

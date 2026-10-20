@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <title>Kim Jong Un Tile Puzzle</title>
+    <!-- The prior GitHub mirror was removed. Load the publisher's live WebGL build. -->
+    <base href="https://storage.y8.com/y8-studio/unity_webgl/breyman/kim_jong_un_tile_puzzle/" />
+    <style>
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
+      #gameContainer, #gameContainer canvas { position: absolute; }
+      #gameContainer canvas[data-pixel-art="true"] { image-rendering: pixelated; }
+      #unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+      #unity-logo { width: 154px; height: 130px; background: url("TemplateData/unity-logo-dark.png") no-repeat center; }
+      #unity-progress-bar-empty { width: 141px; height: 18px; margin-top: 10px; background: url("TemplateData/progress-bar-empty-dark.png") no-repeat center; }
+      #unity-progress-bar-full { width: 0; height: 18px; background: url("TemplateData/progress-bar-full-dark.png") no-repeat center; }
+    </style>
+    <script src="https://img.y8.com/prevent-keys.js"></script>
+  </head>
+  <body>
+    <div id="gameContainer">
+      <canvas id="unity-canvas" data-pixel-art="true"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty"><div id="unity-progress-bar-full"></div></div>
+      </div>
+    </div>
+    <script src="Build/New%20folder.loader.js"></script>
+    <script>
+      const loadingBar = document.querySelector("#unity-loading-bar");
+      const progressBar = document.querySelector("#unity-progress-bar-full");
+      let canvas = document.querySelector("#unity-canvas");
+      const config = {
+        dataUrl: "Build/New%20folder.data",
+        frameworkUrl: "Build/New%20folder.framework.js",
+        codeUrl: "Build/New%20folder.wasm",
+        symbolsUrl: "Build/New%20folder.symbols.json",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "Kim Jong Un Tile Puzzle",
+        productVersion: "1.0",
+      };
+      function resizeGame() {
+        const ratio = 600 / 800;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        if (width * ratio > height) width = Math.ceil(height / ratio);
+        height = Math.floor(width * ratio);
+        const container = canvas.parentElement;
+        container.style.width = canvas.style.width = `${width}px`;
+        container.style.height = canvas.style.height = `${height}px`;
+        container.style.top = `${Math.floor((window.innerHeight - height) / 2)}px`;
+        container.style.left = `${Math.floor((window.innerWidth - width) / 2)}px`;
+      }
+      createUnityInstance(canvas, config, (progress) => {
+        progressBar.style.width = `${Math.round(progress * 100)}%`;
+      }).then((instance) => {
+        loadingBar.style.display = "none";
+        canvas = instance.Module.canvas;
+        resizeGame();
+      }).catch((error) => console.error(error));
+      window.addEventListener("resize", resizeGame);
+      resizeGame();
+    </script>
+    <script src="TemplateData/gameBreakBeta.js"></script>
+  </body>
+</html>
